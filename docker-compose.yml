@@ -16,17 +16,37 @@ services:
       args:
         - WORKDIR_ENV=$PWD/server
     volumes:
-      - .:$PWD
+      - ./server:$PWD/server
     environment:
       DB_USERNAME: $DB_USERNAME
       DB_PASSWORD: $DB_PASSWORD
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: $DB_DATABASE
-    # depends_on:
-      # - postgres
+    depends_on:
+      - postgres
     ports:
       - "4099:4099"
     entrypoint: "bun src/index.ts"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../.docker/Dockerfile.vite
+      target: builder
+      args:
+        - WORKDIR_ENV=$PWD/frontend
+    # no complete folder mapping possible since e.g. esbuild are native dependencies
+    volumes:
+      - ./src:$PWD/src
+      - ./public:$PWD/public
+      - ./package.json:$PWD/package.json
+      - ./vite.config.ts:$PWD/vite.config.ts
+    environment:
+      VITE_BITCOIN_GUESSER_BASE: $VITE_BITCOIN_GUESSER_BASE
+    ports:
+      - "5173:5173"
+    entrypoint: "bun --bun run dev"
 volumes:
   pgdata:
+  node_modules_fe:
