@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: $DB_USERNAME
+      POSTGRES_PASSWORD: $DB_PASSWORD
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  server:
+    build:
+      context: ./server
+      dockerfile: ../.docker/Dockerfile.bun
+      target: builder
+      args:
+        - WORKDIR_ENV=$PWD/server
+    volumes:
+      - .:$PWD
+    environment:
+      DB_USERNAME: $DB_USERNAME
+      DB_PASSWORD: $DB_PASSWORD
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: $DB_DATABASE
+    # depends_on:
+      # - postgres
+    ports:
+      - "4099:4099"
+    entrypoint: "bun src/index.ts"
+volumes:
+  pgdata:

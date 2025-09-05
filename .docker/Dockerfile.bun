@@ -1,0 +1,32 @@
+ARG BUN_VERSION=1.2.0
+FROM oven/bun:${BUN_VERSION}-alpine as development
+ARG WORKDIR_ENV
+WORKDIR ${WORKDIR_ENV}
+COPY package.json bun.lock drizzle.config.ts ./
+RUN bun install --frozen-lockfile
+
+FROM oven/bun:${BUN_VERSION}-alpine AS builder
+ARG WORKDIR_ENV
+
+WORKDIR ${WORKDIR_ENV}
+
+COPY ./package.json bun.lock ./
+
+RUN bun install --frozen-lockfile
+
+
+FROM oven/bun:${BUN_VERSION}-alpine
+
+ARG WORKDIR_ENV
+WORKDIR ${WORKDIR_ENV}
+
+COPY --from=builder ${WORKDIR_ENV}/node_modules ${WORKDIR_ENV}/node_modules
+COPY src src
+COPY migrations migrations
+COPY drizzle.config.ts drizzle.config.ts
+COPY package.json .
+
+RUN mkdir -m 0777 -p ${WORKDIR_ENV}/.cache
+ENV NODE_ENV production
+
+CMD [ "bun", "--preload", "./src/instrumentation.ts", "src/index.ts" ]
