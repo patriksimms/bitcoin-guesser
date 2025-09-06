@@ -1,10 +1,7 @@
 import { HTTPException } from 'hono/http-exception'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-
-process.on('SIGINT', async () => {
-    process.exit()
-})
+import { BinanceAPIService } from './binanceAPI/BinanceAPIService'
 
 export const app = new Hono().onError((err, c) => {
     // Sentry.captureException(err)
@@ -43,6 +40,14 @@ app.get('/health', (c) => {
         stage: process.env.STAGE ?? 'local',
         commit: process.env.CI_COMMIT_SHA ?? 'unknown',
     })
+})
+
+const binanceAPIService = new BinanceAPIService()
+const interval = binanceAPIService.startBTCPriceUpdate()
+
+process.on('SIGINT', async () => {
+    clearInterval(interval)
+    process.exit()
 })
 
 console.log('Server is running on port 4099')

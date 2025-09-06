@@ -6,7 +6,7 @@ declare global {
       DB_PASSWORD: string;
       DB_PORT: string;
       DB_DATABASE: string;
-      NODE_ENV: 'development' | 'production';
+      NODE_ENV: 'development' | 'production' | 'test';
       STAGE: string
       CI_COMMIT_SHA: string
     }
