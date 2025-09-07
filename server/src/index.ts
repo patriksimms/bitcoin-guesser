@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { BinanceAPIService } from './binanceAPI/BinanceAPIService'
 import guessesController from '../src/guesses/GuessesController'
+import binanceAPIController from '../src/binanceAPI/BinanceAPIController'
 
 export const app = new Hono().onError((err, c) => {
     // Sentry.captureException(err)
@@ -13,7 +14,7 @@ export const app = new Hono().onError((err, c) => {
     return c.json({ error: 'Internal Server error' }, 500)
 })
 
-const allowedOrigins = ['http://localhost:3000']
+const allowedOrigins = ['http://localhost:5173']
 const corsMiddleware = cors({
     origin: (origin) => {
         if (!origin) {
@@ -44,6 +45,7 @@ app.get('/health', (c) => {
 })
 
 app.route('/guesses', guessesController)
+app.route('/binanceAPIService', binanceAPIController)
 
 const binanceAPIService = new BinanceAPIService()
 const interval = binanceAPIService.startBTCPriceUpdate()

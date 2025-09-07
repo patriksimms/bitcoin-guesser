@@ -38,10 +38,10 @@ services:
         - WORKDIR_ENV=$PWD/frontend
     # no complete folder mapping possible since e.g. esbuild are native dependencies
     volumes:
-      - ./src:$PWD/src
-      - ./public:$PWD/public
-      - ./package.json:$PWD/package.json
-      - ./vite.config.ts:$PWD/vite.config.ts
+      - ./frontend/src:$PWD/frontend/src
+      - ./frontend/public:$PWD/frontend/public
+      - ./frontend/package.json:$PWD/frontend/package.json
+      - ./frontend/vite.config.ts:$PWD/frontend/vite.config.ts
     environment:
       VITE_BITCOIN_GUESSER_BASE: $VITE_BITCOIN_GUESSER_BASE
     ports:

@@ -1,3 +1,4 @@
+import { desc } from 'drizzle-orm'
 import { BTCPrice } from '../db/schema/BTCPrice'
 import { dbClient } from '../dbClient'
 import Logger from '../Logger'
@@ -47,11 +48,11 @@ export class BinanceAPIService {
         }
     }
 
-    async get2LastBTCPrice(): Promise<string[]> {
+    async getLastBTCPrice(): Promise<string> {
         // TODO test
-        const latestBTCPrice = await dbClient.select().from(BTCPrice).orderBy(BTCPrice.timeStamp).limit(2)
+        const latestBTCPrice = await dbClient.select().from(BTCPrice).orderBy(desc(BTCPrice.timeStamp))
         // TODO test if last 2 prices are roughly 60sec apart
         // TODO what happens when the setInterval did not work and the last prices are very old?
-        return latestBTCPrice.map(e => e.price)
+        return latestBTCPrice.map(e => e.price)[0]
     }
 }
