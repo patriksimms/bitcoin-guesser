@@ -8,6 +8,20 @@
       "when": 1757165990358,
       "tag": "0000_add BTCPrice",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1757245535033,
+      "tag": "0001_add guesses",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757246696019,
+      "tag": "0002_add timestamp to guess",
+      "breakpoints": true
     }
   ]
 }

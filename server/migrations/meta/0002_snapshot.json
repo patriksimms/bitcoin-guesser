@@ -1,0 +1,110 @@
+{
+  "id": "e1e3fdef-0362-40f7-bb0d-6268dca599b8",
+  "prevId": "7e018725-73a7-477f-b0de-46f36046eae8",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.btc_price": {
+      "name": "btc_price",
+      "schema": "",
+      "columns": {
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "now()"
+        },
+        "price": {
+          "name": "price",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.guesses": {
+      "name": "guesses",
+      "schema": "",
+      "columns": {
+        "guess_id": {
+          "name": "guess_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "player_uid": {
+          "name": "player_uid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guess": {
+          "name": "guess",
+          "type": "guess_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "player_uid_idx": {
+          "name": "player_uid_idx",
+          "columns": [
+            {
+              "expression": "player_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.guess_type": {
+      "name": "guess_type",
+      "schema": "public",
+      "values": [
+        "lower",
+        "higher"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

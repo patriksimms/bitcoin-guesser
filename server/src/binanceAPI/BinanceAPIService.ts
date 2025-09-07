@@ -9,7 +9,7 @@ export class BinanceAPIService {
     startBTCPriceUpdate(): NodeJS.Timeout {
         return setInterval(async () => {
             try {
-                const newPrice = await this.getBTCPrice()
+                const newPrice = await this.getBTCPriceFromAPI()
                 await dbClient.insert(BTCPrice).values({ price: newPrice })
                 this.logger.info('BTC Price inserted')
             } catch (e) {
@@ -24,7 +24,7 @@ export class BinanceAPIService {
     }
 
     // binance returns price as string which matches decimal representation for drizzle
-    private async getBTCPrice(): Promise<string> {
+    private async getBTCPriceFromAPI(): Promise<string> {
         try {
             const res = await fetch(
                 `${BinanceAPIService.BINANCE_BASE_URL}/ticker/price?symbol=BTCUSDT`,
@@ -45,5 +45,13 @@ export class BinanceAPIService {
             }
             return '-1'
         }
+    }
+
+    async get2LastBTCPrice(): Promise<string[]> {
+        // TODO test
+        const latestBTCPrice = await dbClient.select().from(BTCPrice).orderBy(BTCPrice.timeStamp).limit(2)
+        // TODO test if last 2 prices are roughly 60sec apart
+        // TODO what happens when the setInterval did not work and the last prices are very old?
+        return latestBTCPrice.map(e => e.price)
     }
 }

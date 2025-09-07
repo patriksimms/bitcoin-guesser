@@ -2,6 +2,7 @@ import { HTTPException } from 'hono/http-exception'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { BinanceAPIService } from './binanceAPI/BinanceAPIService'
+import guessesController from '../src/guesses/GuessesController'
 
 export const app = new Hono().onError((err, c) => {
     // Sentry.captureException(err)
@@ -41,6 +42,8 @@ app.get('/health', (c) => {
         commit: process.env.CI_COMMIT_SHA ?? 'unknown',
     })
 })
+
+app.route('/guesses', guessesController)
 
 const binanceAPIService = new BinanceAPIService()
 const interval = binanceAPIService.startBTCPriceUpdate()
