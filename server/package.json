@@ -5,7 +5,8 @@
     "dev": "bun run src/index.ts",
     "migration:generate": "bunx drizzle-kit generate --name $1",
     "migration:run": "bun --bun run drizzle-kit migrate",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "tsc": "tsc"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.0",
