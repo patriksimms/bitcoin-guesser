@@ -1,0 +1,6 @@
+name: bitcoin-guesser-infra
+description: iac for bitcoin guesser
+runtime:
+  name: nodejs
+  options:
+    packagemanager: bun

@@ -1,0 +1,12 @@
+{
+    "name": "bitcoin-guesser-infra",
+    "devDependencies": {
+        "@types/node": "^18",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@pulumi/aws": "^7.0.0",
+        "@pulumi/synced-folder": "^0.11.1",
+        "@pulumi/pulumi": "^3.113.0"
+    }
+}
