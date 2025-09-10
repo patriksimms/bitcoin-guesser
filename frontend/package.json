@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
@@ -23,7 +24,8 @@
     "react-dom": "^19.1.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.13",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "vitest": "^3.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
