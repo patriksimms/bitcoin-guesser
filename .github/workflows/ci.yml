@@ -19,14 +19,14 @@ jobs:
       - name: Use Bun 
         uses: oven-sh/setup-bun@v2
 
-      - name: Install dependencies
-        run: cd frontend
-
       - name: Test where I am
         run: pwd
+        working-directory: ./frontend
 
       - name: Install dependencies
         run: bun install
+        working-directory: ./frontend
 
       - name: Run tests
         run: bun run test
+        working-directory: ./frontend
