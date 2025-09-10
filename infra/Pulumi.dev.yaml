@@ -1,3 +1,5 @@
 config:
   aws:region: eu-central-1
   aws:profile: private
+  bitcoin-guesser-infra:dbPassword:
+    secure: AAABAFMPvwPFYn1smEcsLGNN+74DDPszedpMvXlBL8ANC0RKCErRbqHBBK1Yp95WDmmqn0VYKSRYbw==
