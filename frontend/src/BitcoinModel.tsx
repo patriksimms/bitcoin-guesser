@@ -15,9 +15,14 @@ export function BitcoinModel() {
     const coinRef = useRef(null)
     const btcRef = useRef(null)
 
-    useFrame((state, delta) => { 
-        coinRef.current.rotation.y += delta
-        btcRef.current.rotation.y += delta
+    useFrame((_state, delta) => { 
+        if (coinRef !== null && btcRef !== null) {
+            // TODO add types
+            // @ts-expect-error mesh node is still untyped
+            coinRef.current!.rotation.y += delta
+            // @ts-expect-error mesh node is still untyped
+            btcRef.current!.rotation.y += delta
+        }
     })
 
     return (
@@ -26,14 +31,18 @@ export function BitcoinModel() {
                 ref={coinRef}
                 castShadow
                 receiveShadow
-                geometry={nodes.BitCoin_LowPoly_FFC107_0.geometry}
+                // @ts-expect-error node with index type has no further types since it depends on gltf file
+                geometry={nodes['BitCoin_LowPoly_FFC107_0'].geometry}
+                // @ts-expect-error same for material
                 material={materials.FFC107}
             />
             <mesh
                 ref={btcRef}
                 castShadow
                 receiveShadow
-                geometry={nodes.BitCoin_LowPoly_FFFFFF_0.geometry}
+                // @ts-expect-error node with index type has no further types since it depends on gltf file
+                geometry={nodes['BitCoin_LowPoly_FFFFFF_0'].geometry}
+                // @ts-expect-error same for material
                 material={materials.FFFFFF}
             />
         </group>
