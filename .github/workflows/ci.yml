@@ -81,7 +81,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -97,6 +97,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
+          file: .docker/Dockerfile.bun
           context: ./server
           tags: user/bitcoin-guesser:latest
 
