@@ -143,8 +143,8 @@ const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
     ingress: [
         {
             protocol: 'tcp',
-            fromPort: 443,
-            toPort: 443,
+            fromPort: 80,
+            toPort: 80,
             cidrBlocks: ['0.0.0.0/0'],
         },
     ],
@@ -198,35 +198,15 @@ const cluster = new aws.ecs.Cluster('ecs-cluster', {})
 // ECS Task Definition
 const dockerImage = config.require('dockerImage') // e.g. "yourrepo/yourimage:latest"
 
-const cert = new aws.acm.Certificate("cert", {
-    domainName: "lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com",
-    validationMethod: "EMAIL",
-    validationOptions: [{
-        domainName: "lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com",
-        validationDomain: "lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com",
-    }],
-});
-
 const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
+    defaultTargetGroup: {
+        port: 4099,
+        protocol: "HTTP",
+    },
     listeners: [
         {
-            port: 443,
-            protocol: 'HTTPS',
-            certificateArn: cert.arn,
-        },
-        {
-            port: 80,
-            protocol: 'HTTP',
-            defaultActions: [
-                {
-                    type: 'redirect',
-                    redirect: {
-                        protocol: 'HTTPS',
-                        port: '443',
-                        statusCode: 'HTTP_301',
-                    },
-                },
-            ],
+            port: 4099,
+            protocol: "HTTP",
         },
     ],
 })
@@ -244,8 +224,8 @@ const service = new awsx.ecs.FargateService('service', {
             essential: true,
             portMappings: [
                 {
-                    containerPort: 443,
-                    hostPort: 443,
+                    containerPort: 4099,
+                    hostPort: 4099,
                     targetGroup: lb.defaultTargetGroup,
                 },
             ],
@@ -254,11 +234,56 @@ const service = new awsx.ecs.FargateService('service', {
                 { name: 'DB_USER', value: 'appuser' },
                 { name: 'DB_PASS', value: dbPassword },
                 { name: 'DB_NAME', value: 'appdb' },
+                { name: 'APPLICATION_PORT', value: '4099' },
             ],
         },
     },
 })
 
+const ecsOriginId = 'ecs-service-origin';
+
+const ecsCloudfrontDistribution = new aws.cloudfront.Distribution('ecs-cdn', {
+    enabled: true,
+    origins: [
+        {
+            originId: ecsOriginId,
+            domainName: lb.loadBalancer.dnsName,
+            customOriginConfig: {
+                originProtocolPolicy: 'http-only',
+                httpPort: 4099,
+                httpsPort: 443,
+                originSslProtocols: ['TLSv1.2'],
+            },
+        },
+    ],
+    defaultCacheBehavior: {
+        targetOriginId: ecsOriginId,
+        viewerProtocolPolicy: 'redirect-to-https',
+        allowedMethods: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'POST', 'PATCH', 'DELETE'],
+        cachedMethods: ['GET', 'HEAD', 'OPTIONS'],
+        defaultTtl: 0,
+        maxTtl: 0,
+        minTtl: 0,
+        forwardedValues: {
+            queryString: true,
+            cookies: {
+                forward: 'all',
+            },
+        },
+    },
+    priceClass: 'PriceClass_100',
+    restrictions: {
+        geoRestriction: {
+            restrictionType: 'none',
+        },
+    },
+    viewerCertificate: {
+        cloudfrontDefaultCertificate: true,
+    },
+})
+
+export const ecsCdnURL = pulumi.interpolate`https://${ecsCloudfrontDistribution.domainName}`
+export const ecsCdnHostname = ecsCloudfrontDistribution.domainName
 export const backendURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
 
 // Export the URLs and hostnames of the bucket and distribution.

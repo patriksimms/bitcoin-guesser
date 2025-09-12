@@ -28,7 +28,7 @@ services:
       - postgres
     ports:
       - "4099:4099"
-    entrypoint: "bun src/index.ts"
+    entrypoint: "bun run start:prod"
 
   frontend:
     build:
