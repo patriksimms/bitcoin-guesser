@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly BITCOIN_GUESSER_BASE: string
+  readonly VITE_BITCOIN_GUESSER_BASE: string
   // more env variables...
 }
 
