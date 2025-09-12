@@ -97,6 +97,15 @@ const privateSubnet = new aws.ec2.Subnet('private-subnet', {
     vpcId: vpc.id,
     cidrBlock: '10.0.2.0/24',
     mapPublicIpOnLaunch: false,
+    availabilityZone: 'eu-central-1c',
+})
+
+// second subnet to prevent DBSubnetGroupDoesNotCoverEnoughAZs error
+const privateSubnet2 = new aws.ec2.Subnet('private-subnet-2', {
+    vpcId: vpc.id,
+    cidrBlock: '10.0.3.0/24',
+    mapPublicIpOnLaunch: false,
+    availabilityZone: 'eu-central-1b',
 })
 
 const internetGateway = new aws.ec2.InternetGateway('igw', {
@@ -134,8 +143,8 @@ const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
     ingress: [
         {
             protocol: 'tcp',
-            fromPort: 443,
-            toPort: 443,
+            fromPort: 4099,
+            toPort: 4099,
             cidrBlocks: ['0.0.0.0/0'],
         },
     ],
@@ -165,7 +174,7 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup('rds-sg', {
 
 // RDS PostgreSQL instance
 const dbSubnetGroup = new aws.rds.SubnetGroup('db-subnet-group', {
-    subnetIds: [privateSubnet.id],
+    subnetIds: [privateSubnet.id, privateSubnet2.id],
 })
 
 const dbPassword = config.requireSecret('dbPassword')
@@ -189,7 +198,9 @@ const cluster = new aws.ecs.Cluster('ecs-cluster', {})
 // ECS Task Definition
 const dockerImage = config.require('dockerImage') // e.g. "yourrepo/yourimage:latest"
 
-const lb = new awsx.lb.ApplicationLoadBalancer('lb')
+const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
+    defaultTargetGroupPort: 4099,
+})
 
 const service = new awsx.ecs.FargateService('service', {
     cluster: cluster.arn,
@@ -204,6 +215,7 @@ const service = new awsx.ecs.FargateService('service', {
             portMappings: [
                 {
                     containerPort: 4099,
+                    hostPort: 4099,
                     targetGroup: lb.defaultTargetGroup,
                 },
             ],
@@ -217,7 +229,7 @@ const service = new awsx.ecs.FargateService('service', {
     },
 })
 
-export const url = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
+export const backendURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
 
 // Export the URLs and hostnames of the bucket and distribution.
 export const originURL = pulumi.interpolate`http://${bucket.bucketDomainName}`
