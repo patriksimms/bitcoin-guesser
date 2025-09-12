@@ -3,4 +3,4 @@ config:
   aws:profile: private
   bitcoin-guesser-infra:dbPassword:
     secure: AAABAFMPvwPFYn1smEcsLGNN+74DDPszedpMvXlBL8ANC0RKCErRbqHBBK1Yp95WDmmqn0VYKSRYbw==
-  bitcoin-guesser-infra:dockerImage: patriksimms1/bitcoin-guesser:075ba7bad4e197cab92847876be6188bfd4fc0a5
+  bitcoin-guesser-infra:dockerImage: patriksimms1/bitcoin-guesser:ea470f730c73fc325c0c111bbd9ec573631710a3

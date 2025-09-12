@@ -233,7 +233,7 @@ const service = new awsx.ecs.FargateService('service', {
                 { name: 'DB_HOST', value: db.address },
                 { name: 'DB_USER', value: 'appuser' },
                 { name: 'DB_PASS', value: dbPassword },
-                { name: 'DB_NAME', value: 'appdb' },
+                { name: 'DB_DATABASE', value: 'appdb' },
                 { name: 'APPLICATION_PORT', value: '4099' },
             ],
         },
