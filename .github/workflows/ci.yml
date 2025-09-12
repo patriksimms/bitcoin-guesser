@@ -99,7 +99,9 @@ jobs:
           push: true
           file: .docker/Dockerfile.bun
           context: ./server
-          platforms: linux/arm64
+          platforms: |
+            linux/arm64
+            linux/amd64
           build-args: |
             WORKDIR_ENV=/app
           tags: patriksimms1/bitcoin-guesser:${{ github.sha }}
