@@ -2,7 +2,7 @@ export default async function getCurrentBTCPrice() {
     try {
         const response = await fetch(
             // TODO replace with env var
-            'http://localhost:4099' + '/binanceAPIService/current',
+            import.meta.env.BITCOIN_GUESSER_BASE + '/binanceAPIService/current',
         )
 
         if (!response.ok) {

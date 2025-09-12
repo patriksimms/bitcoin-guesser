@@ -36,14 +36,13 @@ services:
       target: builder
       args:
         - WORKDIR_ENV=$PWD/frontend
+        - BITCOIN_GUESSER_BASE=http://localhost:4099
     # no complete folder mapping possible since e.g. esbuild are native dependencies
     volumes:
       - ./frontend/src:$PWD/frontend/src
       - ./frontend/public:$PWD/frontend/public
       - ./frontend/package.json:$PWD/frontend/package.json
       - ./frontend/vite.config.ts:$PWD/frontend/vite.config.ts
-    environment:
-      VITE_BITCOIN_GUESSER_BASE: $VITE_BITCOIN_GUESSER_BASE
     ports:
       - "5173:5173"
     entrypoint: "bun --bun run dev"
