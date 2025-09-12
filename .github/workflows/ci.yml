@@ -92,6 +92,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          context: server
+          context: ./server
           tags: user/bitcoin-guesser:latest
 
