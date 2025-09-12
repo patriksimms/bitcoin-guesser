@@ -23,6 +23,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: $DB_DATABASE
+      APPLICATION_PORT: 4099
     depends_on:
       - postgres
     ports:

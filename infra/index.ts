@@ -143,8 +143,8 @@ const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
     ingress: [
         {
             protocol: 'tcp',
-            fromPort: 4099,
-            toPort: 4099,
+            fromPort: 443,
+            toPort: 443,
             cidrBlocks: ['0.0.0.0/0'],
         },
     ],
@@ -198,8 +198,37 @@ const cluster = new aws.ecs.Cluster('ecs-cluster', {})
 // ECS Task Definition
 const dockerImage = config.require('dockerImage') // e.g. "yourrepo/yourimage:latest"
 
+const cert = new aws.acm.Certificate("cert", {
+    domainName: "lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com",
+    validationMethod: "EMAIL",
+    validationOptions: [{
+        domainName: "lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com",
+        validationDomain: "lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com",
+    }],
+});
+
 const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
-    defaultTargetGroupPort: 4099,
+    listeners: [
+        {
+            port: 443,
+            protocol: 'HTTPS',
+            certificateArn: cert.arn,
+        },
+        {
+            port: 80,
+            protocol: 'HTTP',
+            defaultActions: [
+                {
+                    type: 'redirect',
+                    redirect: {
+                        protocol: 'HTTPS',
+                        port: '443',
+                        statusCode: 'HTTP_301',
+                    },
+                },
+            ],
+        },
+    ],
 })
 
 const service = new awsx.ecs.FargateService('service', {
@@ -215,8 +244,8 @@ const service = new awsx.ecs.FargateService('service', {
             essential: true,
             portMappings: [
                 {
-                    containerPort: 4099,
-                    hostPort: 4099,
+                    containerPort: 443,
+                    hostPort: 443,
                     targetGroup: lb.defaultTargetGroup,
                 },
             ],

@@ -9,6 +9,7 @@ declare global {
       NODE_ENV: 'development' | 'production' | 'test';
       STAGE: string
       CI_COMMIT_SHA: string
+      APPLICATION_PORT: string
     }
   }
 }
