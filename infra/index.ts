@@ -205,6 +205,7 @@ const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
 const service = new awsx.ecs.FargateService('service', {
     cluster: cluster.arn,
     assignPublicIp: true,
+    name: 'bitcoin-guesser-server-service',
     taskDefinitionArgs: {
         container: {
             name: 'bitcoin-guesser-server',
