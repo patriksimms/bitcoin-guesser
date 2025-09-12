@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as aws from '@pulumi/aws'
 import * as synced_folder from '@pulumi/synced-folder'
+import * as awsx from '@pulumi/awsx'
 
 // Import the program's configuration settings.
 const config = new pulumi.Config()
@@ -133,8 +134,8 @@ const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
     ingress: [
         {
             protocol: 'tcp',
-            fromPort: 80,
-            toPort: 80,
+            fromPort: 443,
+            toPort: 443,
             cidrBlocks: ['0.0.0.0/0'],
         },
     ],
@@ -160,14 +161,6 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup('rds-sg', {
             securityGroups: [ecsSecurityGroup.id],
         },
     ],
-    egress: [
-        {
-            protocol: '-1',
-            fromPort: 0,
-            toPort: 0,
-            cidrBlocks: ['0.0.0.0/0'],
-        },
-    ],
 })
 
 // RDS PostgreSQL instance
@@ -179,7 +172,7 @@ const dbPassword = config.requireSecret('dbPassword')
 
 const db = new aws.rds.Instance('postgres-db', {
     engine: 'postgres',
-    instanceClass: 'db.t3.micro',
+    instanceClass: 'db.t4g.micro',
     allocatedStorage: 20,
     dbSubnetGroupName: dbSubnetGroup.name,
     vpcSecurityGroupIds: [rdsSecurityGroup.id],
@@ -193,61 +186,38 @@ const db = new aws.rds.Instance('postgres-db', {
 // ECS Cluster
 const cluster = new aws.ecs.Cluster('ecs-cluster', {})
 
-// IAM role for ECS task execution
-const taskExecRole = new aws.iam.Role('ecs-task-exec-role', {
-    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: 'ecs-tasks.amazonaws.com' }),
-})
-
-new aws.iam.RolePolicyAttachment('ecs-task-exec-policy', {
-    role: taskExecRole.name,
-    policyArn: aws.iam.ManagedPolicy.AmazonECSTaskExecutionRolePolicy,
-})
-
 // ECS Task Definition
 const dockerImage = config.require('dockerImage') // e.g. "yourrepo/yourimage:latest"
 
-const taskDefinition = new aws.ecs.TaskDefinition('app-task', {
-    family: 'app-task',
-    cpu: '10',
-    memory: '256',
-    networkMode: 'awsvpc',
-    requiresCompatibilities: ['FARGATE'],
-    executionRoleArn: taskExecRole.arn,
-    containerDefinitions: pulumi
-        .output([
-            {
-                name: 'app',
-                image: dockerImage,
-                essential: true,
-                portMappings: [
-                    {
-                        containerPort: 80,
-                        protocol: 'tcp',
-                    },
-                ],
-                environment: [
-                    { name: 'DB_HOST', value: db.address },
-                    { name: 'DB_USER', value: 'appuser' },
-                    { name: 'DB_PASS', value: dbPassword },
-                    { name: 'DB_NAME', value: 'appdb' },
-                ],
-            },
-        ])
-        .apply(JSON.stringify),
-})
+const lb = new awsx.lb.ApplicationLoadBalancer('lb')
 
-// ECS Service (public API)
-const ecsService = new aws.ecs.Service('app-service', {
+const service = new awsx.ecs.FargateService('service', {
     cluster: cluster.arn,
-    taskDefinition: taskDefinition.arn,
-    desiredCount: 1,
-    launchType: 'FARGATE',
-    networkConfiguration: {
-        subnets: [publicSubnet.id],
-        securityGroups: [ecsSecurityGroup.id],
-        assignPublicIp: true,
+    assignPublicIp: true,
+    taskDefinitionArgs: {
+        container: {
+            name: 'bitcoin-guesser-server',
+            image: dockerImage,
+            cpu: 10,
+            memory: 256,
+            essential: true,
+            portMappings: [
+                {
+                    containerPort: 4099,
+                    targetGroup: lb.defaultTargetGroup,
+                },
+            ],
+            environment: [
+                { name: 'DB_HOST', value: db.address },
+                { name: 'DB_USER', value: 'appuser' },
+                { name: 'DB_PASS', value: dbPassword },
+                { name: 'DB_NAME', value: 'appdb' },
+            ],
+        },
     },
 })
+
+export const url = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
 
 // Export the URLs and hostnames of the bucket and distribution.
 export const originURL = pulumi.interpolate`http://${bucket.bucketDomainName}`
