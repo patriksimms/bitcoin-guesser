@@ -41,7 +41,7 @@ jobs:
         run: bun run build
         working-directory: ./frontend  
         env:
-          VITE_BITCOIN_GUESSER_BASE: http://lb-982e9fe-1101590496.eu-central-1.elb.amazonaws.com
+          VITE_BITCOIN_GUESSER_BASE: https://d91t9cwujad7n.cloudfront.net
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
