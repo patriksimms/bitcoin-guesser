@@ -96,7 +96,7 @@ const publicSubnet = new aws.ec2.Subnet('public-subnet', {
 const privateSubnet = new aws.ec2.Subnet('private-subnet', {
     vpcId: vpc.id,
     cidrBlock: '10.0.2.0/24',
-    mapPublicIpOnLaunch: false,
+    mapPublicIpOnLaunch: true,
     availabilityZone: 'eu-central-1c',
 })
 
@@ -104,7 +104,7 @@ const privateSubnet = new aws.ec2.Subnet('private-subnet', {
 const privateSubnet2 = new aws.ec2.Subnet('private-subnet-2', {
     vpcId: vpc.id,
     cidrBlock: '10.0.3.0/24',
-    mapPublicIpOnLaunch: false,
+    mapPublicIpOnLaunch: true,
     availabilityZone: 'eu-central-1b',
 })
 
@@ -211,11 +211,29 @@ const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
     ],
 })
 
+// 1. Create an Elastic IP for the NAT Gateway
+const natEip = new aws.ec2.Eip("nat-eip");
+
+// 2. Create the NAT Gateway in the public subnet
+const natGateway = new aws.ec2.NatGateway("nat-gateway", {
+    allocationId: natEip.id,
+    subnetId: publicSubnet.id,
+});
+
+// 3. Add a route to the private route table for internet access via the NAT Gateway
+const privateRoute = new aws.ec2.Route("private-route", {
+    routeTableId: privateRouteTable.id,
+    destinationCidrBlock: "0.0.0.0/0",
+    natGatewayId: natGateway.id,
+});
+
 const service = new awsx.ecs.FargateService('service', {
     cluster: cluster.arn,
     name: 'bitcoin-guesser-server-service',
     networkConfiguration: {
-        subnets: [privateSubnet.id]
+        assignPublicIp: true,
+        securityGroups: [ecsSecurityGroup.id],
+        subnets: [privateSubnet.id, privateSubnet2.id, publicSubnet.id],
     },
     taskDefinitionArgs: {
         container: {
