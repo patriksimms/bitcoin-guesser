@@ -101,4 +101,4 @@ jobs:
           context: ./server
           build-args: |
             WORKDIR_ENV=/app
-          tags: user/bitcoin-guesser:${{ github.sha }}
+          tags: patriksimms1/bitcoin-guesser:${{ github.sha }}
