@@ -99,5 +99,7 @@ jobs:
           push: true
           file: .docker/Dockerfile.bun
           context: ./server
+          build-args: |
+            WORKDIR_ENV: /app
           tags: user/bitcoin-guesser:latest
 
