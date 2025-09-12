@@ -55,9 +55,9 @@ process.on('SIGINT', async () => {
     process.exit()
 })
 
-console.log(`Server is running on port ${process.env.APPLICATION_PORT}}`)
+console.log(`Server is running on port ${process.env.APPLICATION_PORT}`)
 
 export default {
-    port: APPLICATION_PORT,
+    port: process.env.APPLICATION_PORT,
     fetch: app.fetch,
 }
