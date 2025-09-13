@@ -136,6 +136,32 @@ new aws.ec2.RouteTableAssociation('private-rt-assoc', {
     routeTableId: privateRouteTable.id,
 })
 
+new aws.ec2.RouteTableAssociation('private-rt-2-assoc', {
+    subnetId: privateSubnet2.id,
+    routeTableId: privateRouteTable.id,
+})
+
+// 1. Create an Elastic IP for the NAT Gateway
+const natEip = new aws.ec2.Eip("nat-eip", {
+    domain: 'vpc'
+}, {
+    dependsOn: internetGateway,
+});
+
+// 2. Create the NAT Gateway in the public subnet
+const natGateway = new aws.ec2.NatGateway("nat-gateway", {
+    allocationId: natEip.id,
+    subnetId: publicSubnet.id,
+});
+
+// 3. Add a route to the private route table for internet access via the NAT Gateway
+const privateRoute = new aws.ec2.Route("private-route", {
+    routeTableId: privateRouteTable.id,
+    destinationCidrBlock: "0.0.0.0/0",
+    natGatewayId: natGateway.id,
+});
+
+
 // Security group for ECS (allow inbound from internet to API port, and outbound to RDS)
 const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
     vpcId: vpc.id,
@@ -179,6 +205,16 @@ const dbSubnetGroup = new aws.rds.SubnetGroup('db-subnet-group', {
 
 const dbPassword = config.requireSecret('dbPassword')
 
+const dbParameterGroup = new aws.rds.ParameterGroup("postgres-params", {
+    family: "postgres17", // Use the correct family for your Postgres version
+    parameters: [
+        {
+            name: "rds.force_ssl",
+            value: "0",
+        },
+    ],
+});
+
 const db = new aws.rds.Instance('postgres-db', {
     engine: 'postgres',
     instanceClass: 'db.t4g.micro',
@@ -190,6 +226,7 @@ const db = new aws.rds.Instance('postgres-db', {
     password: dbPassword,
     dbName: 'appDb',
     skipFinalSnapshot: true,
+    parameterGroupName: dbParameterGroup.name
 })
 
 // ECS Cluster
@@ -210,22 +247,6 @@ const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
         },
     ],
 })
-
-// 1. Create an Elastic IP for the NAT Gateway
-const natEip = new aws.ec2.Eip("nat-eip");
-
-// 2. Create the NAT Gateway in the public subnet
-const natGateway = new aws.ec2.NatGateway("nat-gateway", {
-    allocationId: natEip.id,
-    subnetId: publicSubnet.id,
-});
-
-// 3. Add a route to the private route table for internet access via the NAT Gateway
-const privateRoute = new aws.ec2.Route("private-route", {
-    routeTableId: privateRouteTable.id,
-    destinationCidrBlock: "0.0.0.0/0",
-    natGatewayId: natGateway.id,
-});
 
 const service = new awsx.ecs.FargateService('service', {
     cluster: cluster.arn,
@@ -251,9 +272,9 @@ const service = new awsx.ecs.FargateService('service', {
             ],
             environment: [
                 { name: 'DB_HOST', value: db.address },
-                { name: 'DB_USER', value: 'appuser' },
-                { name: 'DB_PASS', value: dbPassword },
-                { name: 'DB_DATABASE', value: 'appdb' },
+                { name: 'DB_USERNAME', value: 'appuser' },
+                { name: 'DB_PASSWORD', value: dbPassword },
+                { name: 'DB_DATABASE', value: 'appDb' },
                 { name: 'APPLICATION_PORT', value: '4099' },
             ],
         },
