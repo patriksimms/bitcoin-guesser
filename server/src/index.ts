@@ -15,6 +15,7 @@ export const app = new Hono().onError((err, c) => {
 })
 
 const allowedOrigins = ['http://localhost:5173, https://d2ng2zbdmi9642.cloudfront.net']
+
 const corsMiddleware = cors({
     origin: (origin) => {
         if (!origin) {
