@@ -1,12 +1,11 @@
-import * as pulumi from '@pulumi/pulumi'
 import * as aws from '@pulumi/aws'
-import * as synced_folder from '@pulumi/synced-folder'
 import * as awsx from '@pulumi/awsx'
+import * as pulumi from '@pulumi/pulumi'
 
 // Import the program's configuration settings.
 const config = new pulumi.Config()
 
-// Create an S3 bucket and configure it as a website.
+// Create an S3 bucket for the SPA
 const bucket = new aws.s3.Bucket('bucket')
 
 const bucketPolicy = new aws.s3.BucketPolicy('bucketPolicy', {
@@ -40,7 +39,7 @@ const publicAccessBlock = new aws.s3.BucketPublicAccessBlock('public-access-bloc
     blockPublicAcls: false,
 })
 
-// Create a CloudFront CDN to distribute and cache the website.
+// Create a CloudFront CDN to distribute the frontend
 const cdn = new aws.cloudfront.Distribution('cdn', {
     enabled: true,
     origins: [
@@ -81,24 +80,12 @@ const cdn = new aws.cloudfront.Distribution('cdn', {
     },
 })
 
-// ✅ Use awsx VPC with automatic subnet creation
+// Use awsx VPC with automatic subnet creation
 const vpc = new awsx.ec2.Vpc('vpc', {
     cidrBlock: '10.0.0.0/16',
     numberOfAvailabilityZones: 2,
     enableDnsHostnames: true,
 })
-
-// ❌ REMOVE ALL OF THIS - awsx VPC handles it automatically:
-// - publicSubnet
-// - privateSubnet 
-// - privateSubnet2
-// - internetGateway
-// - publicRouteTable
-// - privateRouteTable
-// - RouteTableAssociation resources
-// - natEip
-// - natGateway 
-// - privateRoute
 
 // Security group for ECS
 const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
@@ -136,13 +123,14 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup('rds-sg', {
     ],
 })
 
-// ✅ Use the VPC's built-in private subnets
+// Use the VPC's built-in private subnets
 const dbSubnetGroup = new aws.rds.SubnetGroup('db-subnet-group', {
     subnetIds: vpc.privateSubnetIds,
 })
 
 const dbPassword = config.requireSecret('dbPassword')
 
+// just for simplicity of this project
 const dbParameterGroup = new aws.rds.ParameterGroup("postgres-params", {
     family: "postgres17",
     parameters: [
@@ -155,6 +143,7 @@ const dbParameterGroup = new aws.rds.ParameterGroup("postgres-params", {
 
 const db = new aws.rds.Instance('postgres-db', {
     engine: 'postgres',
+    // smallest known instance
     instanceClass: 'db.t4g.micro',
     allocatedStorage: 20,
     dbSubnetGroupName: dbSubnetGroup.name,
@@ -169,12 +158,12 @@ const db = new aws.rds.Instance('postgres-db', {
 
 const cluster = new aws.ecs.Cluster('ecs-cluster', {})
 
+// image for the backend server container. To update the version, change it in Pulumi.infra.yaml
 const dockerImage = config.require('dockerImage')
 
-// ✅ Use the VPC's built-in public subnets
 const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
     securityGroups: [ecsSecurityGroup.id],
-    subnetIds: vpc.publicSubnetIds, // ✅ Use built-in public subnets
+    subnetIds: vpc.publicSubnetIds,
     defaultTargetGroup: {
         port: 4099,
         protocol: "HTTP",
@@ -204,7 +193,7 @@ const service = new awsx.ecs.FargateService('service', {
     networkConfiguration: {
         assignPublicIp: false,
         securityGroups: [ecsSecurityGroup.id],
-        subnets: vpc.privateSubnetIds, // ✅ Use built-in private subnets
+        subnets: vpc.privateSubnetIds,
     },
     enableExecuteCommand: true,
     taskDefinitionArgs: {
@@ -274,10 +263,7 @@ const ecsCloudfrontDistribution = new aws.cloudfront.Distribution('ecs-cdn', {
     },
 })
 
-export const ecsCdnURL = pulumi.interpolate`https://${ecsCloudfrontDistribution.domainName}`
-export const ecsCdnHostname = ecsCloudfrontDistribution.domainName
-export const backendURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
+export const serverCDNURL = pulumi.interpolate`https://${ecsCloudfrontDistribution.domainName}`
+export const serverLBURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
 export const originURL = pulumi.interpolate`http://${bucket.bucketDomainName}`
-export const originHostname = bucket.bucketDomainName
-export const cdnURL = pulumi.interpolate`https://${cdn.domainName}`
-export const cdnHostname = cdn.domainName
+export const spaCRNURL = pulumi.interpolate`https://${cdn.domainName}`
