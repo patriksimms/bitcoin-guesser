@@ -17,6 +17,7 @@ import { queryClient } from './main.tsx'
 export type GuessType = 'higher' | 'lower'
 
 function App() {
+    // updateTimer for the btcPrice (every 10sec)
     const [updateTimer, setUpdateTimer] = useState<NodeJS.Timeout>()
     const [uid, setUid] = useState('')
     const [nextGuessPossibleIn, setNextGuessPossibleIn] = useState(0)
@@ -39,15 +40,18 @@ function App() {
     } = useQuery({
         queryKey: ['currentScore', uid],
         queryFn: async () => getCurrentScore(uid),
+        // prevent initial update before effect has ran to set the UID
         enabled: uid !== '',
     })
 
+    // simple error messaging. In future versions, a real handling could happen here 
     useErrorNotification({
         isError: isBtcPriceError,
         title: 'Error fetching the current BTC price',
         description: btcPriceError?.message ?? 'Unknonwn error',
     })
 
+    // simple error messaging. In future versions, a real handling could happen here 
     useErrorNotification({
         isError: isCurrentScoreError,
         title: 'Error fetching the current user score',
@@ -60,25 +64,35 @@ function App() {
         },
         onSuccess: () => {
             setNextGuessPossibleIn(60)
+            // we cannot use the nextGuessPossible state variable here trivially since it is not updated immediately 
+            // and setNextGuess would set it to -1 instantly
             let index = 60
             const ticker = setInterval(() => {
                 setNextGuessPossibleIn(--index)
             }, 1 * 1000)
+
             setTimeout(async () => {
                 setNextGuessPossibleIn(0)
                 clearInterval(ticker)
+                // refresh score
                 await queryClient.invalidateQueries({ queryKey: ['currentScore', 'uid'] })
             }, 60 * 1000)
         },
         onError: (error: Error) => {
-            if (error.message.includes('Could not submit new guess at server!')) {
+            // when the user refreshes the page, we have no way to know when the last guess was submitted.
+            // In future versions we could fetch the lastSubmitted timestamp from the server for the user or store the lastSubmit in localStorage
+            if (error.message.includes('Server responded with non ok HTTP code 429')) {
                 toast.error(
                     'You can only submit once every 60 seconds! Please wait before your next guess!',
                 )
+                return
             }
+            // simple error messaging. In future versions, a real handling could happen here 
+            toast.error(error.message)
         },
     })
 
+    // uid is persisted in localStorage, when none is existing yet, creating one and saving it there
     useEffect(() => {
         if (LocalStorage.has('distinct_uid')) {
             setUid(LocalStorage.get('distinct_uid')!)
@@ -89,10 +103,12 @@ function App() {
         setUid(uid)
     }, [])
 
+    // fetching a new BTC price every 10 seconds. Compared to updating only 60s after submit, 
+    // this should increase "tension" if the price is going to change again
     useEffect(() => {
         setUpdateTimer(
             setInterval(async () => {
-                await queryClient.refetchQueries()
+                await queryClient.refetchQueries({queryKey: ['btcPrice']})
             }, 10 * 1000),
         )
 

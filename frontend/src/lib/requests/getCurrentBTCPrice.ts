@@ -1,7 +1,6 @@
 export default async function getCurrentBTCPrice() {
     try {
         const response = await fetch(
-            // TODO replace with env var
             import.meta.env.VITE_BITCOIN_GUESSER_BASE + '/binanceAPIService/current',
         )
 
@@ -15,6 +14,7 @@ export default async function getCurrentBTCPrice() {
 
         return currentPrice.price
     } catch (e) {
+        // just log the error here and let react-query handle the error
         console.error(e)
         throw e
     }

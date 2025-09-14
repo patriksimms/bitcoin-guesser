@@ -21,10 +21,8 @@ export default async function submitGuess(guess: GuessType, userID: string) {
 
         return
     } catch (e) {
+        // just log the error here and let react-query handle the error
         console.error(e)
-        if (e instanceof Error) {
-            throw new Error('Could not submit new guess at server!', { cause: e })
-        }
         throw e
     }
 }

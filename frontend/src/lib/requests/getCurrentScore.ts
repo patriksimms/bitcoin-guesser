@@ -1,7 +1,6 @@
 export default async function getCurrentScore(userID: string) {
     try {
         const response = await fetch(
-            // TODO replace with env var
             import.meta.env.VITE_BITCOIN_GUESSER_BASE + `/guesses/score/${userID}`,
         )
 
@@ -14,6 +13,7 @@ export default async function getCurrentScore(userID: string) {
 
         return body.correctGuesses
     } catch (e) {
+        // just log the error here and let react-query handle the error
         console.error(e)
         throw e
     }

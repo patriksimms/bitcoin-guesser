@@ -10,6 +10,8 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 
+// Just there to have something other than text on the page ;)
+// Potential improvement: the rotation axis seem to be not inside the coin, therefore the spinning is not 100% visually pleasant
 export function BitcoinModel() {
     const { nodes, materials } = useGLTF('/scene.gltf')
     const coinRef = useRef(null)
@@ -17,7 +19,6 @@ export function BitcoinModel() {
 
     useFrame((_state, delta) => { 
         if (coinRef !== null && btcRef !== null) {
-            // TODO add types
             // @ts-expect-error mesh node is still untyped
             coinRef.current!.rotation.y += delta
             // @ts-expect-error mesh node is still untyped

@@ -1,3 +1,4 @@
+// Generic Implementation of Session & LocalStorage
 export class WebStorage {
   storage: Storage
 
