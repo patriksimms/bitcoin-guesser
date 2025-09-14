@@ -59,14 +59,12 @@ function App() {
             await submitGuess(guess, uid)
         },
         onSuccess: () => {
-            console.log('Guess Submit successful!')
             setNextGuessPossibleIn(60)
             let index = 60
             const ticker = setInterval(() => {
                 setNextGuessPossibleIn(--index)
             }, 1 * 1000)
             setTimeout(async () => {
-                console.log('You can guess again!')
                 setNextGuessPossibleIn(0)
                 clearInterval(ticker)
                 await queryClient.invalidateQueries({ queryKey: ['currentScore', 'uid'] })
@@ -82,7 +80,6 @@ function App() {
     })
 
     useEffect(() => {
-        console.log('make sure this is just called once')
         if (LocalStorage.has('distinct_uid')) {
             setUid(LocalStorage.get('distinct_uid')!)
             return
