@@ -19,6 +19,8 @@ export class BinanceAPIService {
                 } else {
                     this.logger.error(e)
                 }
+                // throwing error to the outside. Proper error handling with fallback API or developer notification
+                throw e
             }
         // once a minute
         }, 1000 * 60)
@@ -49,10 +51,7 @@ export class BinanceAPIService {
     }
 
     async getLastBTCPrice(): Promise<string> {
-        // TODO test
         const latestBTCPrice = await dbClient.select().from(BTCPrice).orderBy(desc(BTCPrice.timeStamp))
-        // TODO test if last 2 prices are roughly 60sec apart
-        // TODO what happens when the setInterval did not work and the last prices are very old?
         return latestBTCPrice.map(e => e.price)[0]
     }
 }
