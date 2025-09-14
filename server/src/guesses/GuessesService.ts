@@ -132,6 +132,8 @@ export class GuessesService {
                 ),
             )
 
+        // it is suboptimal from performance pov that we execute this complex query 2 times. But works for now and 
+        // should not be a problem for small-to-medium amount of users
         return guessesWon.length - guessesLost.length
     }
 }

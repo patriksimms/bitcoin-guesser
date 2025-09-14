@@ -6,7 +6,6 @@ import guessesController from '../src/guesses/GuessesController'
 import binanceAPIController from '../src/binanceAPI/BinanceAPIController'
 
 export const app = new Hono().onError((err, c) => {
-    // Sentry.captureException(err)
     if (err instanceof HTTPException) {
         return err.getResponse()
     }

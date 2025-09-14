@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as pino from 'pino';
 
+// Simplified logger
 export default class Logger {
 
     pino: pino.Logger<never>
