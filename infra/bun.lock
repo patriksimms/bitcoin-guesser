@@ -4,7 +4,7 @@
     "": {
       "name": "bitcoin-guesser-infra",
       "dependencies": {
-        "@pulumi/aws": "^7.0.0",
+        "@pulumi/aws": "^7.7.0",
         "@pulumi/awsx": "^3.0.0",
         "@pulumi/pulumi": "^3.113.0",
         "@pulumi/synced-folder": "^0.11.1",

@@ -2,6 +2,6 @@ config:
   aws:region: eu-central-1
   aws:profile: private
   bitcoin-guesser-infra:dbPassword:
-    secure: AAABAFMPvwPFYn1smEcsLGNN+74DDPszedpMvXlBL8ANC0RKCErRbqHBBK1Yp95WDmmqn0VYKSRYbw==
+    secure: AAABAJMnVGQd53v2URYs71pfWFBP+HwpjYJ7LGQns62nW9EpGfCJRH4TYDCx1UIinV+Blhzz7dcOtQ==
   bitcoin-guesser-infra:dockerImage: patriksimms1/bitcoin-guesser:31af9e645557b211ddb020806f74cc24f7455d85
 

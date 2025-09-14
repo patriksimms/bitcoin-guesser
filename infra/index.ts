@@ -70,7 +70,6 @@ const cdn = new aws.cloudfront.Distribution('cdn', {
             },
         },
     },
-    // priceClass for europe
     priceClass: 'PriceClass_100',
     restrictions: {
         geoRestriction: {
@@ -82,95 +81,34 @@ const cdn = new aws.cloudfront.Distribution('cdn', {
     },
 })
 
-const vpc = new aws.ec2.Vpc('vpc', {
+// ✅ Use awsx VPC with automatic subnet creation
+const vpc = new awsx.ec2.Vpc('vpc', {
     cidrBlock: '10.0.0.0/16',
+    numberOfAvailabilityZones: 2,
     enableDnsHostnames: true,
 })
 
-const publicSubnet = new aws.ec2.Subnet('public-subnet', {
-    vpcId: vpc.id,
-    cidrBlock: '10.0.1.0/24',
-    mapPublicIpOnLaunch: true,
-})
+// ❌ REMOVE ALL OF THIS - awsx VPC handles it automatically:
+// - publicSubnet
+// - privateSubnet 
+// - privateSubnet2
+// - internetGateway
+// - publicRouteTable
+// - privateRouteTable
+// - RouteTableAssociation resources
+// - natEip
+// - natGateway 
+// - privateRoute
 
-const privateSubnet = new aws.ec2.Subnet('private-subnet', {
-    vpcId: vpc.id,
-    cidrBlock: '10.0.2.0/24',
-    mapPublicIpOnLaunch: true,
-    availabilityZone: 'eu-central-1c',
-})
-
-// second subnet to prevent DBSubnetGroupDoesNotCoverEnoughAZs error
-const privateSubnet2 = new aws.ec2.Subnet('private-subnet-2', {
-    vpcId: vpc.id,
-    cidrBlock: '10.0.3.0/24',
-    mapPublicIpOnLaunch: true,
-    availabilityZone: 'eu-central-1b',
-})
-
-const internetGateway = new aws.ec2.InternetGateway('igw', {
-    vpcId: vpc.id,
-})
-
-const publicRouteTable = new aws.ec2.RouteTable('public-rt', {
-    vpcId: vpc.id,
-    routes: [
-        {
-            cidrBlock: '0.0.0.0/0',
-            gatewayId: internetGateway.id,
-        },
-    ],
-})
-
-new aws.ec2.RouteTableAssociation('public-rt-assoc', {
-    subnetId: publicSubnet.id,
-    routeTableId: publicRouteTable.id,
-})
-
-const privateRouteTable = new aws.ec2.RouteTable('private-rt', {
-    vpcId: vpc.id,
-})
-
-new aws.ec2.RouteTableAssociation('private-rt-assoc', {
-    subnetId: privateSubnet.id,
-    routeTableId: privateRouteTable.id,
-})
-
-new aws.ec2.RouteTableAssociation('private-rt-2-assoc', {
-    subnetId: privateSubnet2.id,
-    routeTableId: privateRouteTable.id,
-})
-
-// 1. Create an Elastic IP for the NAT Gateway
-const natEip = new aws.ec2.Eip("nat-eip", {
-    domain: 'vpc'
-}, {
-    dependsOn: internetGateway,
-});
-
-// 2. Create the NAT Gateway in the public subnet
-const natGateway = new aws.ec2.NatGateway("nat-gateway", {
-    allocationId: natEip.id,
-    subnetId: publicSubnet.id,
-});
-
-// 3. Add a route to the private route table for internet access via the NAT Gateway
-const privateRoute = new aws.ec2.Route("private-route", {
-    routeTableId: privateRouteTable.id,
-    destinationCidrBlock: "0.0.0.0/0",
-    natGatewayId: natGateway.id,
-});
-
-
-// Security group for ECS (allow inbound from internet to API port, and outbound to RDS)
+// Security group for ECS
 const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
-    vpcId: vpc.id,
+    vpcId: vpc.vpcId,
     description: 'Allow HTTP access from internet and DB access to RDS',
     ingress: [
         {
             protocol: 'tcp',
-            fromPort: 80,
-            toPort: 80,
+            fromPort: 4099,
+            toPort: 4099,
             cidrBlocks: ['0.0.0.0/0'],
         },
     ],
@@ -184,9 +122,9 @@ const ecsSecurityGroup = new aws.ec2.SecurityGroup('ecs-sg', {
     ],
 })
 
-// Security group for RDS (only allow access from ECS tasks)
+// Security group for RDS
 const rdsSecurityGroup = new aws.ec2.SecurityGroup('rds-sg', {
-    vpcId: vpc.id,
+    vpcId: vpc.vpcId,
     description: 'Allow PostgreSQL access from ECS only',
     ingress: [
         {
@@ -198,15 +136,15 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup('rds-sg', {
     ],
 })
 
-// RDS PostgreSQL instance
+// ✅ Use the VPC's built-in private subnets
 const dbSubnetGroup = new aws.rds.SubnetGroup('db-subnet-group', {
-    subnetIds: [privateSubnet.id, privateSubnet2.id],
+    subnetIds: vpc.privateSubnetIds,
 })
 
 const dbPassword = config.requireSecret('dbPassword')
 
 const dbParameterGroup = new aws.rds.ParameterGroup("postgres-params", {
-    family: "postgres17", // Use the correct family for your Postgres version
+    family: "postgres17",
     parameters: [
         {
             name: "rds.force_ssl",
@@ -229,16 +167,28 @@ const db = new aws.rds.Instance('postgres-db', {
     parameterGroupName: dbParameterGroup.name
 })
 
-// ECS Cluster
 const cluster = new aws.ecs.Cluster('ecs-cluster', {})
 
-// ECS Task Definition
-const dockerImage = config.require('dockerImage') // e.g. "yourrepo/yourimage:latest"
+const dockerImage = config.require('dockerImage')
 
+// ✅ Use the VPC's built-in public subnets
 const lb = new awsx.lb.ApplicationLoadBalancer('lb', {
+    securityGroups: [ecsSecurityGroup.id],
+    subnetIds: vpc.publicSubnetIds, // ✅ Use built-in public subnets
     defaultTargetGroup: {
         port: 4099,
         protocol: "HTTP",
+        healthCheck: {
+            enabled: true,
+            path: "/health",
+            protocol: "HTTP",
+            port: "4099",
+            matcher: "200-399",
+            interval: 30,
+            timeout: 5,
+            healthyThreshold: 2,
+            unhealthyThreshold: 3,
+        },
     },
     listeners: [
         {
@@ -252,10 +202,11 @@ const service = new awsx.ecs.FargateService('service', {
     cluster: cluster.arn,
     name: 'bitcoin-guesser-server-service',
     networkConfiguration: {
-        assignPublicIp: true,
+        assignPublicIp: false,
         securityGroups: [ecsSecurityGroup.id],
-        subnets: [privateSubnet.id, privateSubnet2.id, publicSubnet.id],
+        subnets: vpc.privateSubnetIds, // ✅ Use built-in private subnets
     },
+    enableExecuteCommand: true,
     taskDefinitionArgs: {
         container: {
             name: 'bitcoin-guesser-server',
@@ -292,7 +243,7 @@ const ecsCloudfrontDistribution = new aws.cloudfront.Distribution('ecs-cdn', {
             customOriginConfig: {
                 originProtocolPolicy: 'http-only',
                 httpPort: 4099,
-                httpsPort: 443,
+                httpsPort: 4099,
                 originSslProtocols: ['TLSv1.2'],
             },
         },
@@ -326,8 +277,6 @@ const ecsCloudfrontDistribution = new aws.cloudfront.Distribution('ecs-cdn', {
 export const ecsCdnURL = pulumi.interpolate`https://${ecsCloudfrontDistribution.domainName}`
 export const ecsCdnHostname = ecsCloudfrontDistribution.domainName
 export const backendURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`
-
-// Export the URLs and hostnames of the bucket and distribution.
 export const originURL = pulumi.interpolate`http://${bucket.bucketDomainName}`
 export const originHostname = bucket.bucketDomainName
 export const cdnURL = pulumi.interpolate`https://${cdn.domainName}`
