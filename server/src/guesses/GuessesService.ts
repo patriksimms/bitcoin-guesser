@@ -96,8 +96,8 @@ export class GuessesService {
             .as('RelevantPriceTrends')
 
         // find all entries where specific player entries match the actualTrend
-        const result = await dbClient
-            .select()
+        const guessesWon = await dbClient
+            .select({ guessId: Guesses.guessId })
             .from(Guesses)
             .leftJoin(
                 RelevantPriceTrends,
@@ -114,6 +114,24 @@ export class GuessesService {
                 ),
             )
 
-        return result.length
+        const guessesLost = await dbClient
+            .select({ guessId: Guesses.guessId })
+            .from(Guesses)
+            .leftJoin(
+                RelevantPriceTrends,
+                // prev trunc allows us to do equality compare here instead of comparing the 2 dates are max 60sec apart
+                eq(
+                    sql`DATE_TRUNC('minute', ${Guesses.timeStamp})`,
+                    RelevantPriceTrends.trend_start_minute,
+                ),
+            )
+            .where(
+                and(
+                    sql`LOWER(${Guesses.guess}::text) <> LOWER(${RelevantPriceTrends.actual_trend})`,
+                    eq(Guesses.playerUID, uid),
+                ),
+            )
+
+        return guessesWon.length - guessesLost.length
     }
 }
