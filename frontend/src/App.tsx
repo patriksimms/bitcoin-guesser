@@ -2,16 +2,17 @@ import { Environment } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Suspense, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { generateUUID } from 'three/src/math/MathUtils.js'
 import './App.css'
 import { BitcoinModel } from './BitcoinModel.tsx'
 import { Button } from './components/ui/button'
+import useErrorNotification from './hooks/useErrorNotification.tsx'
 import getCurrentBTCPrice from './lib/requests/getCurrentBTCPrice.ts'
+import getCurrentScore from './lib/requests/getCurrentScore.ts'
 import submitGuess from './lib/requests/submitGuess.ts'
 import { LocalStorage } from './lib/WebStorage.ts'
 import { queryClient } from './main.tsx'
-import getCurrentScore from './lib/requests/getCurrentScore.ts'
-import { toast } from 'sonner'
 
 export type GuessType = 'higher' | 'lower'
 
@@ -20,15 +21,37 @@ function App() {
     const [uid, setUid] = useState('')
     const [nextGuessPossibleIn, setNextGuessPossibleIn] = useState(0)
 
-    const query = useQuery({
+    const {
+        data: btcPrice,
+        isLoading: isBtcPriceLoading,
+        isError: isBtcPriceError,
+        error: btcPriceError,
+    } = useQuery({
         queryKey: ['btcPrice'],
         queryFn: getCurrentBTCPrice,
     })
 
-    const { data: currentScore } = useQuery({
+    const {
+        data: currentScore,
+        isLoading: isCurrentScoreLoading,
+        isError: isCurrentScoreError,
+        error: currentScoreError,
+    } = useQuery({
         queryKey: ['currentScore', uid],
         queryFn: async () => getCurrentScore(uid),
         enabled: uid !== '',
+    })
+
+    useErrorNotification({
+        isError: isBtcPriceError,
+        title: 'Error fetching the current BTC price',
+        description: btcPriceError?.message ?? 'Unknonwn error',
+    })
+
+    useErrorNotification({
+        isError: isCurrentScoreError,
+        title: 'Error fetching the current user score',
+        description: currentScoreError?.message ?? 'Unknown error',
     })
 
     const mutation = useMutation({
@@ -46,7 +69,7 @@ function App() {
                 console.log('You can guess again!')
                 setNextGuessPossibleIn(0)
                 clearInterval(ticker)
-                await queryClient.invalidateQueries({queryKey: ['currentScore', 'uid']})
+                await queryClient.invalidateQueries({ queryKey: ['currentScore', 'uid'] })
             }, 60 * 1000)
         },
         onError: (error: Error) => {
@@ -94,18 +117,25 @@ function App() {
                 <h2 className="text-center">Current Bitcoin to USD exchange rate:</h2>
                 <p className="mt-2 text-center scroll-m-20 text-4xl font-extrabold tracking-tight text-balance text-green-800">
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-                        parseFloat(query.data),
+                        parseFloat(isBtcPriceLoading ? '0' : btcPrice),
                     )}
                 </p>
             </div>
             <div>
-                <h3 className="text-center">Your current score: <span className='font-bold italic text-xl '>{currentScore ?? 0}</span></h3>
+                <h3 className="text-center">
+                    Your current score:{' '}
+                    <span className="font-bold italic text-xl ">
+                        {isCurrentScoreLoading ? '...' : currentScore}
+                    </span>
+                </h3>
             </div>
             <p className=" text-center italic px-6 mt-12">
                 Please make your next guess: Is the BTC price in 1 minute higher or lower than
                 currently?
             </p>
-            <p className=" text-center italic px-6">You can guess again in {nextGuessPossibleIn} seconds</p>
+            <p className=" text-center italic px-6">
+                You can guess again in {nextGuessPossibleIn} seconds
+            </p>
             <div className="grid grid-cols-2 mx-8 gap-2 mt-4">
                 <Button
                     className="h-14 bg-red-800 cursor-pointer"
