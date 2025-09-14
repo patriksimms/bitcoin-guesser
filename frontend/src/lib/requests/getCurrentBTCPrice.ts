@@ -6,7 +6,7 @@ export default async function getCurrentBTCPrice() {
         )
 
         if (!response.ok) {
-            throw new Error('Could not get the current BTC price!', {
+            throw new Error('Server responded with non ok exit HTTP code', {
                 cause: await response.text(),
             })
         }

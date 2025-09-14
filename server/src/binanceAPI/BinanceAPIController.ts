@@ -13,7 +13,7 @@ router.get('/current', async (c, _next) => {
             price,
         })
     } catch (e) {
-        console.log(e)
+        console.error(e)
     }
     throw new HTTPException(500)
 })

@@ -36,7 +36,7 @@ router.get('/score/:uid', async (c, _next) => {
             correctGuesses,
         })
     } catch (e) {
-        console.log(e)
+        console.error(e)
     }
     throw new HTTPException(500)
 })

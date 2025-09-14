@@ -44,6 +44,8 @@ services:
       - ./frontend/public:$PWD/frontend/public
       - ./frontend/package.json:$PWD/frontend/package.json
       - ./frontend/vite.config.ts:$PWD/frontend/vite.config.ts
+    environment:
+      - VITE_BITCOIN_GUESSER_BASE=http://localhost:4099
     ports:
       - "5173:5173"
     entrypoint: "bun --bun run dev"
