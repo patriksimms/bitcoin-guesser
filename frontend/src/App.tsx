@@ -75,7 +75,7 @@ function App() {
                 setNextGuessPossibleIn(0)
                 clearInterval(ticker)
                 // refresh score
-                await queryClient.invalidateQueries({ queryKey: ['currentScore', 'uid'] })
+                await queryClient.invalidateQueries({ queryKey: ['currentScore'] })
             }, 60 * 1000)
         },
         onError: (error: Error) => {

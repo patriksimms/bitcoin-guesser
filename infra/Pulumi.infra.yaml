@@ -5,5 +5,5 @@ config:
   bitcoin-guesser-infra:dbPassword:
   # https://www.pulumi.com/docs/iac/concepts/secrets/#committing-configuration-to-source-control
     secure: AAABAJMnVGQd53v2URYs71pfWFBP+HwpjYJ7LGQns62nW9EpGfCJRH4TYDCx1UIinV+Blhzz7dcOtQ==
-  bitcoin-guesser-infra:dockerImage: patriksimms1/bitcoin-guesser:b2b391f069c2bab31c965cb8e45f0bcb9eecc8f1
+  bitcoin-guesser-infra:dockerImage: patriksimms1/bitcoin-guesser:ad712efb2358cbdc8dc81b2e8a7b2c05ecf98844
 
