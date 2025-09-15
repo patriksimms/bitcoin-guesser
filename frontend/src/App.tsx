@@ -76,7 +76,7 @@ function App() {
                 clearInterval(ticker)
                 // refresh score
                 await queryClient.invalidateQueries({ queryKey: ['currentScore'] })
-            }, 60 * 1000)
+            }, 61 * 1000)
         },
         onError: (error: Error) => {
             // when the user refreshes the page, we have no way to know when the last guess was submitted.

@@ -2,6 +2,8 @@
 
 A simple application for guessing if the BTC price goes higher or lower in the next minute.
 
+[Deployed Version (https://d1ow4n8ylz5pxh.cloudfront.net/index.html)](https://d1ow4n8ylz5pxh.cloudfront.net/index.html)
+
 ## Project Structure
 
 * server contains the code for the server responsible for fetching the BTC price, storing the guesses of users and calculating the scores
