@@ -13,7 +13,7 @@ export const app = new Hono().onError((err, c) => {
     return c.json({ error: 'Internal Server error' }, 500)
 })
 
-const allowedOrigins = ['http://localhost:5173', 'https://bucket-afe2a6e.s3.eu-central-1.amazonaws.com']
+const allowedOrigins = ['http://localhost:5173', 'https://bucket-afe2a6e.s3.eu-central-1.amazonaws.com', 'https://d1ow4n8ylz5pxh.cloudfront.net']
 
 const corsMiddleware = cors({
     origin: (origin) => {
